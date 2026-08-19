@@ -9,7 +9,11 @@ import openai
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 load_dotenv(override=True)
-set_tracing_disabled(True)
+
+# We use Groq, not OpenAI. Remove OPENAI_API_KEY so the Agents SDK
+# cannot accidentally call OpenAI's tracing endpoint and hit a 429.
+os.environ.pop("OPENAI_API_KEY", None)
+set_tracing_disabled(True)  # belt-and-suspenders: also disable tracing explicitly
 
 client = openai.AsyncOpenAI(
     base_url="https://api.groq.com/openai/v1",
