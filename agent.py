@@ -1,4 +1,4 @@
-from agents import Agent, Runner, OpenAIChatCompletionsModel, set_tracing_disabled
+from agents import Agent, Runner, OpenAIChatCompletionsModel, ModelSettings, set_tracing_disabled
 import asyncio
 import os
 import sys
@@ -27,8 +27,9 @@ model = OpenAIChatCompletionsModel(
 
 agent = Agent(
     name="History Tutor",
-    instructions="You answer history questions clearly and concisely.",
+    instructions="You answer history questions. CRITICAL: You must answer in 30 words or less. Do not exceed this limit unless the user explicitly asks for more details or resources.",
     model=model,
+    model_settings=ModelSettings(extra_body={"reasoning_format": "hidden"}),
 )
 
 async def main():

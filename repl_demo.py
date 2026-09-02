@@ -1,4 +1,4 @@
-from agents import Agent, OpenAIChatCompletionsModel, handoff, run_demo_loop, set_tracing_disabled
+from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, handoff, run_demo_loop, set_tracing_disabled
 import asyncio
 import os
 import sys
@@ -25,20 +25,25 @@ model = OpenAIChatCompletionsModel(
     openai_client=client
 )
 
+# Suppress reasoning <think> traces in final response
+groq_settings = ModelSettings(extra_body={"reasoning_format": "hidden"})
+
 # Specialist Agent 1: History
 history_tutor_agent = Agent(
     name="History Tutor",
     handoff_description="Specialist agent for historical questions",
-    instructions="You answer history questions clearly and concisely.",
+    instructions="You answer history questions. CRITICAL: Your response must be 30 words or less. Do not exceed this limit unless the user explicitly asks for more details or a list of books/resources.",
     model=model,
+    model_settings=groq_settings,
 )
 
 # Specialist Agent 2: Math
 math_tutor_agent = Agent(
     name="Math Tutor",
     handoff_description="Specialist agent for math questions",
-    instructions="You explain math step by step and include worked examples only those Question where user ask explain other wise just be concise or short",
+    instructions="You explain math. CRITICAL: Your response must be 30 words or less, unless the user explicitly asks for a step-by-step explanation or worked examples.",
     model=model,
+    model_settings=groq_settings,
 )
 
 # Configure handoffs for Groq schema compatibility
@@ -51,9 +56,10 @@ math_handoff.input_json_schema.pop("required", None)
 # Main Triage Agent
 triage_agent = Agent(
     name="Triage Agent",
-    instructions="Route each homework question to the right specialist. If the question is not about math or history, answer it directly yourself.",
+    instructions="Route each homework question to the right specialist. If the question is not about math or history, answer it directly yourself. CRITICAL: When answering directly, your response must be 30 words or less.",
     handoffs=[history_handoff, math_handoff],
     model=model,
+    model_settings=groq_settings,
 )
 
 async def main():

@@ -1,4 +1,4 @@
-from agents import Agent, Runner, OpenAIChatCompletionsModel, function_tool, set_tracing_disabled
+from agents import Agent, Runner, OpenAIChatCompletionsModel, ModelSettings, function_tool, set_tracing_disabled
 import asyncio
 import os
 import sys
@@ -35,11 +35,14 @@ def history_fun_fact() -> str:
 # Strip it so the schema is valid for Groq's API.
 history_fun_fact.params_json_schema.pop("required", None)
 
+groq_settings = ModelSettings(extra_body={"reasoning_format": "hidden"})
+
 # 2. Register tools on the Agent
 agent = Agent(
     name="History Tutor",
-    instructions="You answer history questions clearly and concisely. Use tools when they help you give a precise answer.",
+    instructions="You answer history questions. CRITICAL: Your response must be 30 words or less. Do not exceed this limit unless the user explicitly asks for more details or resources. Use tools when they help you give a precise answer.",
     model=model,
+    model_settings=groq_settings,
     tools=[history_fun_fact],   # <-- new
 )
 
