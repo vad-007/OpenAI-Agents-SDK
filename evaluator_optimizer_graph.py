@@ -32,7 +32,7 @@ client = openai.AsyncOpenAI(
 )
 
 model = OpenAIChatCompletionsModel(
-    model="qwen/qwen3.6-27b",
+    model="qwen/qwen3.8-27b",
     openai_client=client,
 )
 
@@ -76,7 +76,7 @@ def save_draft(ctx: RunContextWrapper[WorkflowState], draft_text: str) -> str:
     state = ctx.context
     state.iteration += 1
     state.current_draft = draft_text
-    return f"Draft #{state.iteration} saved to graph state: {draft_text}"
+    return f"Draft #{state.iteration} saved to graph state."
 
 @function_tool
 def record_feedback(ctx: RunContextWrapper[WorkflowState], feedback: str) -> str:
@@ -97,10 +97,11 @@ sanitize_schema_for_groq(record_feedback.params_json_schema)
 writer_node = Agent(
     name="Writer Node",
     instructions=(
-        "You are the Writer Node in an Evaluator-Optimizer graph.\n"
-        "Task: Generate or refine a concise 2-sentence draft based on the topic and any reviewer feedback.\n"
-        "Step 1: Call `save_draft` with the draft text.\n"
-        "Step 2: Immediately hand off to Reviewer Node."
+        "You are the Writer Node in an Evaluator-Optimizer graph. "
+        "Task: Draft or refine content based on the goal and any reviewer feedback. "
+        "1. Write the content (make sure it strictly adheres to sentence count and constraints). "
+        "2. Call `save_draft` with your content. "
+        "3. Immediately hand off to Reviewer Node."
     ),
     tools=[save_draft],
     model=model,
@@ -111,8 +112,8 @@ writer_node = Agent(
 publisher_node = Agent(
     name="Publisher Node",
     instructions=(
-        "You are the Publisher Node. Review the latest draft from the workflow and produce "
-        "the final EvaluationReport structured output."
+        "You are the Publisher Node. Format the finalized approved draft and evaluation into "
+        "the required EvaluationReport schema."
     ),
     output_type=EvaluationReport,
     model=model,
@@ -123,10 +124,10 @@ publisher_node = Agent(
 reviewer_node = Agent(
     name="Reviewer Node",
     instructions=(
-        "You are the Reviewer / Evaluator Node.\n"
-        "Evaluate the draft in context (score 1-100 for clarity, punchiness, and constraints).\n"
-        "- If score >= 85 or if a revision was already made: Hand off immediately to Publisher Node.\n"
-        "- If score < 85: First call `record_feedback` with specific improvement advice, then hand off to Writer Node."
+        "You are the Reviewer / Evaluator Node. Critically assess the draft in context. "
+        "Rubric: Rate clarity, tone, and punchiness (Score 1-100). "
+        "• If score >= 85 OR if this is the 2nd revision: Hand off to Publisher Node to finalize the report. "
+        "• Otherwise: Call `record_feedback` with improvement points, then hand off back to Writer Node."
     ),
     tools=[record_feedback],
     model=model,
